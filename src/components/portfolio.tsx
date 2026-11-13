@@ -226,7 +226,7 @@ export default function Portfolio() {
         setFont(s.font || "Manrope");
         setCard(s.card || "soft");
         setMotionOn(s.motionOn ?? true);
-        setHidden(s.hidden || []);
+        setHidden(Array.isArray(s.hidden) ? s.hidden : []);
         setSelectedVoiceURI(typeof s.voiceURI === "string" ? s.voiceURI : "");
       }
     } catch (error) {
@@ -237,11 +237,17 @@ export default function Portfolio() {
   }, []);
   useEffect(() => {
     if (!("speechSynthesis" in window)) return;
-    const synthesis = window.speechSynthesis;
-    const updateVoices = () => setVoices(synthesis.getVoices());
-    updateVoices();
-    synthesis.addEventListener("voiceschanged", updateVoices);
-    return () => synthesis.removeEventListener("voiceschanged", updateVoices);
+    try {
+      const synthesis = window.speechSynthesis;
+      const updateVoices = () => {
+        try {
+          setVoices(synthesis.getVoices());
+        } catch {}
+      };
+      updateVoices();
+      synthesis.addEventListener?.("voiceschanged", updateVoices);
+      return () => synthesis.removeEventListener?.("voiceschanged", updateVoices);
+    } catch {}
   }, []);
   useEffect(() => {
     let active = true;
@@ -296,20 +302,24 @@ export default function Portfolio() {
     document.documentElement.style.setProperty("--accent2", accent2);
     document.documentElement.style.setProperty("--radius", radius + "px");
     document.documentElement.style.setProperty("--font-head", font);
-    localStorage.setItem(
-      "zamruth-portfolio",
-      JSON.stringify({
-        theme,
-        accent,
-        accent2,
-        radius,
-        font,
-        card,
-        motionOn,
-        hidden,
-        voiceURI: selectedVoiceURI,
-      }),
-    );
+    try {
+      localStorage.setItem(
+        "zamruth-portfolio",
+        JSON.stringify({
+          theme,
+          accent,
+          accent2,
+          radius,
+          font,
+          card,
+          motionOn,
+          hidden,
+          voiceURI: selectedVoiceURI,
+        }),
+      );
+    } catch {
+      // Storage blocked or full (private mode, in-app browsers); ignore.
+    }
   }, [
     theme,
     accent,
